@@ -1,0 +1,60 @@
+# The Gate — configuration.
+# Harnesses are swappable; accounts vary. These are the surfaces, exposed
+# instead of hardcoded. Safe defaults come from SPEC.md.
+
+[gate]
+# Auto-distillation OFF. Mongo can run its own extractor over a finished
+# conversation and write facts straight to the shelves, skipping the gate
+# (SPEC §4.1). The wrapper is the only writer, so this stays an empty list.
+# The package asserts extraction == [] at startup and fails loudly otherwise.
+extraction = []
+
+# Session-filter strictness for the context builder:
+#   "explicit" — a session filter (or the ALL_SESSIONS sentinel) is always
+#                required; build(None) raises. This is the spec default (§4.5).
+session_filter = "explicit"
+
+# Per-shelf enablement. A disabled shelf refuses writes at the gate.
+[gate.shelves]
+semantic = true
+episodic = true
+taxonomic = true
+procedural = true
+
+# --- Mongo adapter (gate/mongo_adapter.py) --------------------------------
+# Every value in this section is INFERRED plumbing: a close match to the
+# four-shelf model, meant to be adjusted to your account. It is written to
+# be edited, not to be trusted blind. See README "Proven vs inferred".
+
+[mongo]
+# INFERRED — adjust to your account; this is the plumbing seam.
+base_url = "https://agentengine.mongodb.com"
+# INFERRED — your store / project identifiers.
+store_id = ""
+project_id = ""
+# INFERRED — auth shape: header name + scheme; the key itself comes from
+# the environment variable named below, never from this file.
+auth_header = "Authorization"
+auth_scheme = "Bearer"
+api_key_env = "MONGO_AGENT_MEMORY_API_KEY"
+# INFERRED — endpoint paths ({store_id} is substituted from above).
+write_batch_path = "/v1/stores/{store_id}/entries:batchWrite"
+search_path = "/v1/stores/{store_id}/entries:search"
+flag_path = "/v1/stores/{store_id}/entries/{entry_id}:flag"
+
+# Mongo's agent-memory SDK pin at time of writing. The adapter speaks HTTP
+# through its transport seam rather than the SDK, but any direct SDK use
+# should pin this and re-verify — the API is public preview (SPEC §11).
+sdk_pin = "mongodb agent memory sdk 0.11.7 — re-verify at integration"
+
+# --- Sorter -----------------------------------------------------------------
+[sorter]
+# Which harness drives the sorter. "cursor" = the Cursor cloud-agent API
+# with GLM 5.3 Flash at reasoning max (the shipped, tested path).
+endpoint = "cursor"
+model = "glm-5p3-flash"
+reasoning_effort = "max"
+# NOTE (SPEC Addendum A): effort VALUE MAPPING differs by endpoint — on the
+# Z.ai Coding Plan endpoint, xhigh/max map to max and medium/high to high.
+# If you point the sorter at a different endpoint, record it here and check
+# its mapping; values are not portable across endpoints.
